@@ -1,24 +1,27 @@
 __author__ = "Yuyu Luo"
-
 '''
 Define the Encoder of the model
 '''
 
 import torch
 import torch.nn as nn
-from model.SubLayers import MultiHeadAttentionLayer, PositionwiseFeedforwardLayer
+
+from model.SubLayers import (MultiHeadAttentionLayer,
+                             PositionwiseFeedforwardLayer)
+
 
 class Encoder(nn.Module):
-    def __init__(self,
-                 input_dim,
-                 hid_dim,  # == d_model
-                 n_layers,
-                 n_heads,
-                 pf_dim,
-                 dropout,
-                 device,
-                 TOK_TYPES,
-                 max_length=128):
+    def __init__(
+            self,
+            src_vectors,
+            hid_dim,  # == d_model
+            n_layers,
+            n_heads,
+            pf_dim,
+            dropout,
+            device,
+            TOK_TYPES,
+            max_length=128):
         super().__init__()
 
         self.device = device
@@ -31,19 +34,19 @@ class Encoder(nn.Module):
         - num_embeddings (int) – size of the dictionary of embeddings  
         - embedding_dim (int) – the size of each embedding vector 
         '''
-        self.tok_embedding = nn.Embedding(input_dim, hid_dim)  # 初始化Embedding
+
+        self.tok_embedding = nn.Embedding.from_pretrained(src_vectors)
+        self.fc_tok_embedding = nn.Linear(100, hid_dim)
+
+        # self.tok_embedding = nn.Embedding(input_dim, hid_dim)  # 初始化Embedding
 
         self.pos_embedding = nn.Embedding(max_length, hid_dim)
 
         tok_types_num = len(TOK_TYPES.vocab.itos)
         self.tok_types_embedding = nn.Embedding(tok_types_num, hid_dim)
 
-        self.layers = nn.ModuleList([EncoderLayer(hid_dim,
-                                                  n_heads,
-                                                  pf_dim,
-                                                  dropout,
-                                                  device)
-                                     for _ in range(n_layers)])
+        self.layers = nn.ModuleList(
+            [EncoderLayer(hid_dim, n_heads, pf_dim, dropout, device) for _ in range(n_layers)])
 
         self.dropout = nn.Dropout(dropout)
 
@@ -56,7 +59,8 @@ class Encoder(nn.Module):
 
         pos = torch.arange(0, src_len).unsqueeze(0).repeat(batch_size, 1).to(self.device)
 
-        src = self.dropout((self.tok_embedding(src) * self.scale) + self.tok_types_embedding(tok_types) + self.pos_embedding(pos))
+        src = self.dropout((self.fc_tok_embedding(self.tok_embedding(src)) * self.scale) +
+                           self.tok_types_embedding(tok_types) + self.pos_embedding(pos))
 
         # src = [batch size, src len, hid dim]
 
@@ -68,20 +72,13 @@ class Encoder(nn.Module):
 
 
 class EncoderLayer(nn.Module):
-    def __init__(self,
-                 hid_dim,
-                 n_heads,
-                 pf_dim,
-                 dropout,
-                 device):
+    def __init__(self, hid_dim, n_heads, pf_dim, dropout, device):
         super().__init__()
 
         self.self_attn_layer_norm = nn.LayerNorm(hid_dim)
         self.ff_layer_norm = nn.LayerNorm(hid_dim)
         self.self_attention = MultiHeadAttentionLayer(hid_dim, n_heads, dropout, device)
-        self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim,
-                                                                     pf_dim,
-                                                                     dropout)
+        self.positionwise_feedforward = PositionwiseFeedforwardLayer(hid_dim, pf_dim, dropout)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, src, src_mask, batch_matrix):
