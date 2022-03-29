@@ -59,8 +59,9 @@ class VegaZero2VegaLite(object):
                 and vega_zero_keywords[vega_zero_keywords.index('sort') + 1] in ['x', 'y']):
             self.parsed_vegaZero['transform']['sort']['axis'] = vega_zero_keywords[
                 vega_zero_keywords.index('sort') + 1]
-            self.parsed_vegaZero['transform']['sort']['type'] = vega_zero_keywords[
-                vega_zero_keywords.index('sort') + 2]
+            if vega_zero_keywords.index('sort') + 2 < len(vega_zero_keywords):
+                self.parsed_vegaZero['transform']['sort']['type'] = vega_zero_keywords[
+                    vega_zero_keywords.index('sort') + 2]
 
         if 'group' in vega_zero_keywords:
             self.parsed_vegaZero['transform']['group'] = vega_zero_keywords[
