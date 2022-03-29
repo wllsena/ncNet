@@ -294,7 +294,7 @@ class VegaZero2VegaLite(object):
                     "datum.rank <= " + str(VegaZero['transform']['topk'])
                 }]
 
-        if VegaZero['transform']['sort']['axis'] != '' and VegaZero['mark'] != 'mark':
+        if VegaZero['transform']['sort']['axis'] != '' and VegaZero['mark'] != 'arc':
             if VegaZero['transform']['sort']['axis'] == 'x':
                 if VegaZero['transform']['sort']['type'] == 'desc':
                     self.VegaLiteSpec[VegaZero['mark']]['encoding']['y']['sort'] = '-x'
