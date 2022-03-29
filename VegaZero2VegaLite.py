@@ -55,7 +55,7 @@ class VegaZero2VegaLite(object):
             self.parsed_vegaZero['transform']['topk'] = vega_zero_keywords[
                 vega_zero_keywords.index('topk') + 1]
 
-        if ('sort' in vega_zero_keywords
+        if (a'sort' in vega_zero_keywords
                 and vega_zero_keywords[vega_zero_keywords.index('sort') + 1] in ['x', 'y']):
             self.parsed_vegaZero['transform']['sort']['axis'] = vega_zero_keywords[
                 vega_zero_keywords.index('sort') + 1]
@@ -294,7 +294,7 @@ class VegaZero2VegaLite(object):
                     "datum.rank <= " + str(VegaZero['transform']['topk'])
                 }]
 
-        if VegaZero['transform']['sort']['axis'] != '':
+        if VegaZero['transform']['sort']['axis'] != ''  and VegaZero['mark'] != 'mark':
             if VegaZero['transform']['sort']['axis'] == 'x':
                 if VegaZero['transform']['sort']['type'] == 'desc':
                     self.VegaLiteSpec[VegaZero['mark']]['encoding']['y']['sort'] = '-x'
