@@ -10,10 +10,6 @@ import pandas as pd
 import py_stringsimjoin as ssj
 from dateutil.parser import parse
 
-from VegaZero2VegaLite import VegaZero2VegaLite
-
-vz2vl = VegaZero2VegaLite()
-
 
 class ProcessData4Training(object):
     def __init__(self, db_url):
@@ -283,11 +279,6 @@ class ProcessData4Training(object):
 
                     new_row1 = list(row)
                     new_row2 = list(row)
-
-                    try:
-                        vz2vl.to_VegaLite(row['vega_zero'])
-                    except:
-                        continue
 
                     query_list = row['vega_zero'].lower().split(' ')
                     table_name = query_list[query_list.index('data') + 1]
