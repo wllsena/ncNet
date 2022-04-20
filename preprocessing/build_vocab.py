@@ -4,6 +4,7 @@ import re
 
 import torch
 from torchtext.data import BucketIterator, Field, TabularDataset
+
 from VegaZero2VegaLite import VegaZero2VegaLite
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -13,11 +14,11 @@ vz2vl = VegaZero2VegaLite()
 
 def build_vocab(data_dir, db_info, batch_size, max_input_length):
     def tokenizer(text):
-        if text[:4] == 'mark':
-            spec = vz2vl.to_VegaLite(text)
-            tokens = re.sub(r'([^\w\'])', r' \1 ', str(spec)).split()
-        else:
-            tokens = text.split(' ')
+        return text.split(' ')
+
+    def tokenizer_trg(text):
+        spec = vz2vl.to_VegaLite(text)
+        tokens = re.sub(r'([^\w\'])', r' \1 ', str(spec)).split()
 
         return tokens
 
@@ -30,7 +31,7 @@ def build_vocab(data_dir, db_info, batch_size, max_input_length):
                 lower=True,
                 batch_first=True)
 
-    TRG = Field(tokenize=tokenizer,
+    TRG = Field(tokenize=tokenizer_trg,
                 init_token='<sos>',
                 eos_token='<eos>',
                 lower=True,
