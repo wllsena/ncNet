@@ -5,6 +5,10 @@ import re
 
 import torch
 
+from VegaZero2VegaLite import VegaZero2VegaLite
+
+vz2vl = VegaZero2VegaLite()
+
 
 def get_candidate_columns(src):
     col_list = re.findall('<col>.*</col>', src)[0].lower().split(' ')
@@ -492,6 +496,9 @@ def postprocessing_group(gold_q_tok, pred_q_tok):
 
 
 def postprocessing(gold_query, pred_query, if_template, src_input):
+    spec = vz2vl.to_VegaLite(gold_query)
+    gold_query = re.sub(r'([^\w\'])', r' \1 ', str(spec))
+
     return gold_query == pred_query
     try:
         # get the template:
