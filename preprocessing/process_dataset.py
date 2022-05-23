@@ -1,14 +1,14 @@
 __author__ = "Yuyu Luo"
 
+import json
+import os
+import re
+import sqlite3
+import time
 
 import pandas as pd
-import sqlite3
-from dateutil.parser import parse
-import json
 import py_stringsimjoin as ssj
-import re
-import os
-import time
+from dateutil.parser import parse
 
 
 class ProcessData4Training(object):
@@ -58,7 +58,8 @@ class ProcessData4Training(object):
             for each_table in cursor.fetchall():
                 try:
                     cursor = connection.execute('select * from ' + each_table[0])
-                    columns_list = list(map(lambda x: x[0].lower(), cursor.description))  # a list of column names
+                    columns_list = list(map(lambda x: f'"{x[0].lower()}"',
+                                            cursor.description))  # a list of column names
                     table_columns[each_table[0].lower()] = columns_list
                 except:
                     print('table error: ', each_table[0])
@@ -83,17 +84,25 @@ class ProcessData4Training(object):
         values_in_columns = dict()
 
         connection = sqlite3.connect(self.db_url + '/' + db_id + '/' + db_id + '.sqlite')
+        connection.text_factory = lambda b: b.decode(errors='ignore')
         cursor = connection.cursor()  # get a cursor
         for col in columns_list:
             try:
                 if conditions == None:
                     values_in_columns[col] = list(
-                        set([values[0] for values in cursor.execute("select " + col + " from " + table_id)]))
+                        set([
+                            values[0]
+                            for values in cursor.execute("select " + col + " from " + table_id)
+                        ]))
                 else:
                     my_list = list(
-                        set([values[0] for values in cursor.execute("select " + col + " from " + table_id)]))
-                    if all(isinstance(item, int) or isinstance(item, float) or str(item) == '' or str(
-                            item) == 'None' for item in my_list) == False:
+                        set([
+                            values[0]
+                            for values in cursor.execute("select " + col + " from " + table_id)
+                        ]))
+                    if all(
+                            isinstance(item, int) or isinstance(item, float) or str(item) == ''
+                            or str(item) == 'None' for item in my_list) == False:
                         # dont consider numeric col
                         if all(len(str(item)) <= 50 for item in my_list) == True:
                             # remove string column with value length > 50
@@ -113,7 +122,8 @@ class ProcessData4Training(object):
              }
         '''
 
-    def get_mentioned_values_in_NL_question(self, db_id, table_id, NL_question, db_table_col_val_map):
+    def get_mentioned_values_in_NL_question(self, db_id, table_id, NL_question,
+                                            db_table_col_val_map):
         '''
         high recall: to find a set of possible columns/vables mentioned in NL_question
         '''
@@ -136,9 +146,16 @@ class ProcessData4Training(object):
         A['id'] = list(range(len(A)))
         C = pd.DataFrame(data=columns_list, columns=['name'])
         C['id'] = list(range(len(C)))
-        cand_col = ssj.edit_distance_join(
-            A, C, 'id', 'id', 'name', 'name', 2, l_out_attrs=['name'], r_out_attrs=['name'], show_progress=False
-        )
+        cand_col = ssj.edit_distance_join(A,
+                                          C,
+                                          'id',
+                                          'id',
+                                          'name',
+                                          'name',
+                                          2,
+                                          l_out_attrs=['name'],
+                                          r_out_attrs=['name'],
+                                          show_progress=False)
         cand_col = cand_col.sort_values(by=['_sim_score'])
         cand_col = list(cand_col['r_name'])
         candidate_mentioned_col = []
@@ -154,9 +171,19 @@ class ProcessData4Training(object):
                 B_value.append([k, each_v])
         B = pd.DataFrame(data=B_value, columns=['col', 'name'])
         B['id'] = list(range(len(B)))
-        output_pairs = ssj.edit_distance_join(
-            A, B, 'id', 'id', 'name', 'name', 2, l_out_attrs=['name'], r_out_attrs=['name', 'col'], show_progress=False
-        )
+        A['name'] = A['name'].astype(str)
+        B['name'] = B['name'].astype(str)
+        B['col'] = B['col'].astype(str)
+        output_pairs = ssj.edit_distance_join(A,
+                                              B,
+                                              'id',
+                                              'id',
+                                              'name',
+                                              'name',
+                                              2,
+                                              l_out_attrs=['name'],
+                                              r_out_attrs=['name', 'col'],
+                                              show_progress=False)
         output_pairs = output_pairs.sort_values(by=['_sim_score'])
         cand_val = list(zip(output_pairs['r_name'], output_pairs['r_col']))
         candidate_mentioned_val = []
@@ -197,7 +224,8 @@ class ProcessData4Training(object):
 
             if query_list.index('sort') + 2 < len(query_list):
                 order_type = query_list[query_list.index('sort') + 2]  # asc / desc
-                query_chart_template = query_chart_template.replace('[S]', order_xy + ' ' + order_type)
+                query_chart_template = query_chart_template.replace('[S]',
+                                                                    order_xy + ' ' + order_type)
 
             else:
                 query_chart_template = query_chart_template.replace('[S]', order_xy)
@@ -246,7 +274,7 @@ class ProcessData4Training(object):
     def process4training(self):
         # process for template
         for each in ['train.csv', 'dev.csv', 'test.csv']:
-            df = pd.read_csv('./dataset/' + each)
+            df = pd.read_csv('../dataset/' + each)
             data = list()
 
             for index, row in df.iterrows():
@@ -259,13 +287,13 @@ class ProcessData4Training(object):
                     query_list = row['vega_zero'].lower().split(' ')
                     table_name = query_list[query_list.index('data') + 1]
 
-                    query_template, query_chart_template = self.fill_in_query_template_by_chart_template(row['vega_zero'])
+                    query_template, query_chart_template = self.fill_in_query_template_by_chart_template(
+                        row['vega_zero'])
 
                     # get a list of mentioned values in the NL question
 
                     col_names, value_names = self.get_mentioned_values_in_NL_question(
-                        row['db_id'], table_name, row['question'], db_table_col_val_map=finding_map
-                    )
+                        row['db_id'], table_name, row['question'], db_table_col_val_map=finding_map)
                     col_names = ' '.join(str(e) for e in col_names)
                     value_names = ' '.join(str(e) for e in value_names)
                     new_row1.append(col_names)
@@ -278,11 +306,13 @@ class ProcessData4Training(object):
 
                     input_source1 = '<N> ' + row[
                         'question'] + ' </N>' + ' <C> ' + query_template + ' </C> ' + '<D> ' + table_name + ' <COL> ' + col_names + ' </COL>' + ' <VAL> ' + value_names + ' </VAL> </D>'
-                    input_source1 = ' '.join(input_source1.split())  # Replace multiple spaces with single space
+                    input_source1 = ' '.join(
+                        input_source1.split())  # Replace multiple spaces with single space
 
                     input_source2 = '<N> ' + row[
                         'question'] + ' </N>' + ' <C> ' + query_chart_template + ' </C> ' + '<D> ' + table_name + ' <COL> ' + col_names + ' </COL>' + ' <VAL> ' + value_names + ' </VAL> </D>'
-                    input_source2 = ' '.join(input_source2.split())  # Replace multiple spaces with single space
+                    input_source2 = ' '.join(
+                        input_source2.split())  # Replace multiple spaces with single space
 
                     new_row1.append(input_source1)
                     new_row1.append(row['vega_zero'])
@@ -303,15 +333,16 @@ class ProcessData4Training(object):
                 if index % 500 == 0:
                     print(round(index / len(df) * 100, 2))
 
-            df_template = pd.DataFrame(data=data, columns=list(df.columns) + ['mentioned_columns', 'mentioned_values',
-                                                                              'query_template', 'source', 'labels',
-                                                                              'token_types'])
+            df_template = pd.DataFrame(data=data,
+                                       columns=list(df.columns) + [
+                                           'mentioned_columns', 'mentioned_values',
+                                           'query_template', 'source', 'labels', 'token_types'
+                                       ])
             df_template.to_csv('../dataset/dataset_final/' + each, index=False)
 
     ### Part 2
 
     def extract_db_information(self):
-
         def get_values_in_columns(db_id, table_id, columns_list):
             '''
             get values in the column
@@ -323,7 +354,10 @@ class ProcessData4Training(object):
             for col in columns_list:
                 try:
                     values_in_columns[col] = list(
-                        set([values[0] for values in cursor.execute("select " + col + " from " + table_id)]))
+                        set([
+                            values[0]
+                            for values in cursor.execute("select " + col + " from " + table_id)
+                        ]))
                 except:
                     print('error on {0}'.format(db_id))
 
@@ -360,6 +394,7 @@ class ProcessData4Training(object):
 
         df.to_csv('../dataset/database_information.csv', index=False)
 
+
 if __name__ == "__main__":
     start_time = time.time()
 
@@ -375,6 +410,7 @@ if __name__ == "__main__":
     finding_map = dict()
 
     db_list = os.listdir('../dataset/database/')
+    db_list = [db for db in db_list if os.path.isdir('../dataset/database/' + db)]
 
     for db in db_list:
         table_cols = DataProcesser.get_table_columns(db)
@@ -395,4 +431,5 @@ if __name__ == "__main__":
     DataProcesser.extract_db_information()
     print("build 'database_information.csv'  end ... ...")
 
-    print("\n {0} minutes for processing the dataset.".format(round((time.time()-start_time)/60,2)))
+    print("\n {0} minutes for processing the dataset.".format(
+        round((time.time() - start_time) / 60, 2)))
