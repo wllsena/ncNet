@@ -1,29 +1,27 @@
 __author__ = "Yuyu Luo"
-
 '''
 This script handles the training process.
 '''
 
+import argparse
+import math
+import random
+import time
 
+import matplotlib.pyplot as plt
+import numpy as np
 import torch
 import torch.nn as nn
 
-from model.Model import Seq2Seq
-from model.Encoder import Encoder
 from model.Decoder import Decoder
+from model.Encoder import Encoder
+from model.Model import Seq2Seq
 from preprocessing.build_vocab import build_vocab
-
-import numpy as np
-import random
-import time
-import math
-import matplotlib.pyplot as plt
-
-import argparse
 
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
 
 def initialize_weights(m):
     if hasattr(m, 'weight') and m.weight.dim() > 1:
@@ -106,21 +104,23 @@ def epoch_time(start_time, end_time):
     return elapsed_mins, elapsed_secs
 
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='train.py')
 
-    parser.add_argument('-data_dir', required=False, default='./dataset/dataset_final/',
+    parser.add_argument('-data_dir',
+                        required=False,
+                        default='./dataset/dataset_final/',
                         help='Path to dataset for building vocab')
-    parser.add_argument('-db_info', required=False, default='./dataset/database_information.csv',
+    parser.add_argument('-db_info',
+                        required=False,
+                        default='./dataset/database_information.csv',
                         help='Path to database tables/columns information, for building vocab')
     parser.add_argument('-output_dir', type=str, default='./save_models/')
 
-    parser.add_argument('-epoch', type=int, default=100,
-                        help='the number of epoch for training')
+    parser.add_argument('-epoch', type=int, default=100, help='the number of epoch for training')
     parser.add_argument('-learning_rate', type=float, default=0.0005)
     parser.add_argument('-batch_size', type=int, default=128)
-    parser.add_argument('-max_input_length', type=int, default=128)
+    parser.add_argument('-max_input_length', type=int, default=256)
 
     # parser.add_argument('-n_head', type=int, default=8)
     # parser.add_argument('-dropout', type=float, default=0.1)
@@ -138,19 +138,20 @@ if __name__ == '__main__':
     torch.cuda.manual_seed(SEED)
     torch.backends.cudnn.deterministic = True
 
-
-    print("------------------------------\n| Build vocab start ... | \n------------------------------")
-    SRC, TRG, TOK_TYPES, BATCH_SIZE, train_iterator, valid_iterator, test_iterator, my_max_length =  build_vocab(
+    print(
+        "------------------------------\n| Build vocab start ... | \n------------------------------"
+    )
+    SRC, TRG, TOK_TYPES, BATCH_SIZE, train_iterator, valid_iterator, test_iterator, my_max_length = build_vocab(
         data_dir=opt.data_dir,
         db_info=opt.db_info,
         batch_size=opt.batch_size,
-        max_input_length=opt.max_input_length
-    )
-    print("------------------------------\n| Build vocab end ... | \n------------------------------")
+        max_input_length=opt.max_input_length)
+    print(
+        "------------------------------\n| Build vocab end ... | \n------------------------------")
 
     INPUT_DIM = len(SRC.vocab)
     OUTPUT_DIM = len(TRG.vocab)
-    HID_DIM = 256 # it equals to embedding dimension
+    HID_DIM = 256  # it equals to embedding dimension
     ENC_LAYERS = 3
     DEC_LAYERS = 3
     ENC_HEADS = 8
@@ -160,35 +161,29 @@ if __name__ == '__main__':
     ENC_DROPOUT = 0.1
     DEC_DROPOUT = 0.1
 
-    print("------------------------------\n| Build encoder of the ncNet ... | \n------------------------------")
-    enc = Encoder(INPUT_DIM,
-                  HID_DIM,
-                  ENC_LAYERS,
-                  ENC_HEADS,
-                  ENC_PF_DIM,
-                  ENC_DROPOUT,
-                  device,
-                  TOK_TYPES,
-                  my_max_length
-                 )
-    print("------------------------------\n| Build decoder of the ncNet ... | \n------------------------------")
-    dec = Decoder(OUTPUT_DIM,
-                  HID_DIM,
-                  DEC_LAYERS,
-                  DEC_HEADS,
-                  DEC_PF_DIM,
-                  DEC_DROPOUT,
-                  device,
-                  my_max_length
-                 )
+    print(
+        "------------------------------\n| Build encoder of the ncNet ... | \n------------------------------"
+    )
+    enc = Encoder(INPUT_DIM, HID_DIM, ENC_LAYERS, ENC_HEADS, ENC_PF_DIM, ENC_DROPOUT, device,
+                  TOK_TYPES, my_max_length)
+    print(
+        "------------------------------\n| Build decoder of the ncNet ... | \n------------------------------"
+    )
+    dec = Decoder(OUTPUT_DIM, HID_DIM, DEC_LAYERS, DEC_HEADS, DEC_PF_DIM, DEC_DROPOUT, device,
+                  my_max_length)
 
     SRC_PAD_IDX = SRC.vocab.stoi[SRC.pad_token]
     TRG_PAD_IDX = TRG.vocab.stoi[TRG.pad_token]
 
-    print("------------------------------\n| Build the ncNet structure... | \n------------------------------")
-    ncNet = Seq2Seq(enc, dec, SRC, SRC_PAD_IDX, TRG_PAD_IDX, device).to(device) # define the transformer-based ncNet
+    print(
+        "------------------------------\n| Build the ncNet structure... | \n------------------------------"
+    )
+    ncNet = Seq2Seq(enc, dec, SRC, SRC_PAD_IDX, TRG_PAD_IDX,
+                    device).to(device)  # define the transformer-based ncNet
 
-    print("------------------------------\n| Init for training ... | \n------------------------------")
+    print(
+        "------------------------------\n| Init for training ... | \n------------------------------"
+    )
     ncNet.apply(initialize_weights)
 
     LEARNING_RATE = opt.learning_rate
