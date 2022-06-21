@@ -38,7 +38,7 @@ def train(model, iterator, optimizer, criterion, clip):
 
         optimizer.zero_grad()
 
-        output, _ = model(src[:, :-1], tok_types, SRC)
+        output, _ = model(src[:, :-1], tok_types[:, :-1], SRC)
 
         # output = [batch size, trg len - 1, output dim]
         # trg = [batch size, trg len]
