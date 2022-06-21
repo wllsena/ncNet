@@ -252,9 +252,6 @@ class ProcessData4Training(object):
         '''
         token_types = ''
 
-        for ele in re.findall('<N>.*</N>', input_source)[0].split(' '):
-            token_types += ' nl'
-
         for ele in re.findall('<C>.*</C>', input_source)[0].split(' '):
             token_types += ' template'
 
@@ -267,6 +264,9 @@ class ProcessData4Training(object):
             token_types += ' value'
 
         token_types += ' table'
+
+        for ele in re.findall('<N>.*</N>', input_source)[0].split(' '):
+            token_types += ' nl'
 
         token_types = token_types.strip()
         return token_types
