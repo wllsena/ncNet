@@ -304,13 +304,13 @@ class ProcessData4Training(object):
                     new_row1.append(query_template)
                     new_row2.append(query_chart_template)
 
-                    input_source1 = '<N> ' + row[
-                        'question'] + ' </N>' + ' <C> ' + query_template + ' </C> ' + '<D> ' + table_name + ' <COL> ' + col_names + ' </COL>' + ' <VAL> ' + value_names + ' </VAL> </D>'
+                    input_source1 = '<C> ' + query_template + ' </C> ' + '<D> ' + table_name + ' <COL> ' + col_names + ' </COL> ' + '<VAL> ' + value_names + ' </VAL> </D> ' + '<N> ' + row[
+                        'question'] + ' </N>'
                     input_source1 = ' '.join(
                         input_source1.split())  # Replace multiple spaces with single space
 
-                    input_source2 = '<N> ' + row[
-                        'question'] + ' </N>' + ' <C> ' + query_chart_template + ' </C> ' + '<D> ' + table_name + ' <COL> ' + col_names + ' </COL>' + ' <VAL> ' + value_names + ' </VAL> </D>'
+                    input_source2 = '<C> ' + query_chart_template + ' </C> ' + '<D> ' + table_name + ' <COL> ' + col_names + ' </COL> ' + '<VAL> ' + value_names + ' </VAL> </D> ' + '<N> ' + row[
+                        'question'] + ' </N>'
                     input_source2 = ' '.join(
                         input_source2.split())  # Replace multiple spaces with single space
 
